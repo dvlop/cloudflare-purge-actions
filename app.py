@@ -1,3 +1,8 @@
+"""
+Cloudflare Cache Purge Action
+Purges Cloudflare cache for specified zones using the Cloudflare API.
+"""
+
 import requests
 import os
 import sys
@@ -13,7 +18,7 @@ CF_ZONE_IDS = os.environ.get("CF_ZONE_IDS")
 
 
 def check_cf_response(response: dict, context: str = "") -> None:
-    """Проверяет ответ Cloudflare API и выводит ошибки если они есть."""
+    """Validates Cloudflare API response and raises an error if the request failed."""
     if not response.get("success", False):
         errors = response.get("errors", [])
         messages = response.get("messages", [])
@@ -23,7 +28,7 @@ def check_cf_response(response: dict, context: str = "") -> None:
             message = err.get("message", "unknown error")
             error_details.append(f"[{code}] {message}")
         
-        error_msg = f"Cloudflare API error"
+        error_msg = "Cloudflare API error"
         if context:
             error_msg += f" ({context})"
         error_msg += ": " + "; ".join(error_details) if error_details else ": unknown error"
@@ -35,8 +40,8 @@ def check_cf_response(response: dict, context: str = "") -> None:
         raise SystemExit(error_msg)
 
 
-def CFGetZoneIDByName(zone_name: str, headers: dict, per_page: str = None) -> str:
-
+def get_zone_id_by_name(zone_name: str, headers: dict, per_page: str = None) -> str:
+    """Fetches Zone ID from Cloudflare API by zone name."""
     if per_page is not None:
         request_url = f"{CF_API_URL}/zones?per_page={per_page}"
     else:
@@ -62,7 +67,8 @@ def CFGetZoneIDByName(zone_name: str, headers: dict, per_page: str = None) -> st
     raise SystemExit(f"Zone '{zone_name}' not found in Cloudflare account")
 
 
-def CFGetZoneIDByNames(zone_names: str, headers: dict, per_page: str = None) -> list:
+def get_zone_ids_by_names(zone_names: str, headers: dict, per_page: str = None) -> list:
+    """Fetches Zone IDs from Cloudflare API by comma-separated zone names."""
     if per_page is not None:
         request_url = f"{CF_API_URL}/zones?per_page={per_page}"
     else:
@@ -94,31 +100,39 @@ def CFGetZoneIDByNames(zone_names: str, headers: dict, per_page: str = None) -> 
     return zone_ids_list
 
 
-def CFPrugeZoneCache(zone_id: str, headers: dict, payload: dict = None) -> None:
+def purge_zone_cache(zone_id: str, headers: dict, payload: dict = None) -> None:
+    """Purges cache for a single Cloudflare zone."""
     if payload is None:
-        payload = {
-            "purge_everything": True,
-        }
+        payload = {"purge_everything": True}
+    
     try:
-        response = requests.post(f"{CF_API_URL}/zones/{zone_id}/purge_cache", headers=headers, json=payload).json()
+        response = requests.post(
+            f"{CF_API_URL}/zones/{zone_id}/purge_cache",
+            headers=headers,
+            json=payload
+        ).json()
         check_cf_response(response, f"purging cache for zone {zone_id}")
-        print(f"Zone ID: {zone_id} Cache purged successfully.")
+        print(f"Zone ID: {zone_id} - Cache purged successfully.")
     except requests.exceptions.HTTPError as err:
         raise SystemExit(err)
     except requests.exceptions.RequestException as e:
         raise SystemExit(e)
 
 
-def CFPrugeZonesCache(zone_ids: list, headers: dict, payload: dict = None) -> None:
+def purge_zones_cache(zone_ids: list, headers: dict, payload: dict = None) -> None:
+    """Purges cache for multiple Cloudflare zones."""
     if payload is None:
-        payload = {
-            "purge_everything": True,
-        }
+        payload = {"purge_everything": True}
+    
     for zone_id in zone_ids:
         try:
-            response = requests.post(f"{CF_API_URL}/zones/{zone_id}/purge_cache", headers=headers, json=payload).json()
+            response = requests.post(
+                f"{CF_API_URL}/zones/{zone_id}/purge_cache",
+                headers=headers,
+                json=payload
+            ).json()
             check_cf_response(response, f"purging cache for zone {zone_id}")
-            print(f"Zone ID: {zone_id} Cache purged successfully.")
+            print(f"Zone ID: {zone_id} - Cache purged successfully.")
         except requests.exceptions.HTTPError as err:
             raise SystemExit(err)
         except requests.exceptions.RequestException as e:
@@ -126,29 +140,29 @@ def CFPrugeZonesCache(zone_ids: list, headers: dict, payload: dict = None) -> No
 
 
 def main() -> None:
-
+    """Main entry point for the Cloudflare cache purge action."""
     headers = {
         "Content-Type": "application/json",
         "X-Auth-Email": f"{CF_EMAIL_ADDR}",
         "X-Auth-Key": f"{CF_API_KEY}",
-        "User-Agent": "github.com/Am6puk/cloudflare-purge-actions"
+        "User-Agent": "github.com/dvlop/cloudflare-purge-actions"
     }
 
     if CF_ZONE_ID is not None or CF_ZONE_IDS is not None:
         if CF_ZONE_ID is not None:
-            CFPrugeZoneCache(CF_ZONE_ID, headers)
+            purge_zone_cache(CF_ZONE_ID, headers)
         else:
             zone_ids = [zid.strip() for zid in CF_ZONE_IDS.split(",")]
-            CFPrugeZonesCache(zone_ids, headers)
+            purge_zones_cache(zone_ids, headers)
     elif CF_ZONE_NAME is not None or CF_ZONE_NAMES is not None:
         if CF_ZONE_NAME is not None:
-            zoneID = CFGetZoneIDByName(CF_ZONE_NAME, headers, per_page=CF_PAGE_COUNT)
-            CFPrugeZoneCache(zoneID, headers)
+            zone_id = get_zone_id_by_name(CF_ZONE_NAME, headers, per_page=CF_PAGE_COUNT)
+            purge_zone_cache(zone_id, headers)
         else:
-            zoneIDS = CFGetZoneIDByNames(CF_ZONE_NAMES, headers, per_page=CF_PAGE_COUNT)
-            CFPrugeZonesCache(zoneIDS, headers)
+            zone_ids = get_zone_ids_by_names(CF_ZONE_NAMES, headers, per_page=CF_PAGE_COUNT)
+            purge_zones_cache(zone_ids, headers)
     else:
-        raise SystemExit("No one of evns is set")
+        raise SystemExit("Error: No zone identifier provided. Set CF_ZONE_ID, CF_ZONE_IDS, CF_ZONE_NAME, or CF_ZONE_NAMES.")
 
 
 if __name__ == "__main__":

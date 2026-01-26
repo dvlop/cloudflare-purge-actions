@@ -1,6 +1,11 @@
-FROM python:3.11.0-alpine
+FROM python:3.12-alpine
 
-RUN pip3 install requests
+LABEL maintainer="dvlop"
+LABEL org.opencontainers.image.source="https://github.com/dvlop/cloudflare-purge-actions"
+LABEL org.opencontainers.image.description="GitHub Action to purge Cloudflare cache"
+
+RUN pip install --no-cache-dir requests
 
 COPY app.py /app/app.py
+
 ENTRYPOINT ["python", "/app/app.py"]
