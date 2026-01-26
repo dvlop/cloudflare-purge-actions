@@ -1,4 +1,4 @@
-name: "Cloudflare Purge Cache"
+name: "Cloudflare Cache Purge"
 description: "GitHub Action to purge Cloudflare cache by zone name or zone ID. Supports single and multiple zones."
 author: "dvlop"
 
