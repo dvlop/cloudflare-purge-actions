@@ -10,7 +10,7 @@ import sys
 CF_API_URL = "https://api.cloudflare.com/client/v4"
 
 
-def _get_env_or_none(key: str) -> str:
+def _get_env_or_none(key: str) -> str | None:
     """Get environment variable, converting empty strings to None."""
     value = os.environ.get(key)
     return None if value == "" else value
