@@ -8,13 +8,13 @@ import os
 import sys
 
 CF_API_URL = "https://api.cloudflare.com/client/v4"
-CF_EMAIL_ADDR = os.environ.get("CF_EMAIL_ADDR")
-CF_API_KEY = os.environ.get("CF_API_KEY")
-CF_ZONE_NAME = os.environ.get("CF_ZONE_NAME")
-CF_ZONE_NAMES = os.environ.get("CF_ZONE_NAMES")
-CF_PAGE_COUNT = os.environ.get("CF_PAGE_COUNT")
-CF_ZONE_ID = os.environ.get("CF_ZONE_ID")
-CF_ZONE_IDS = os.environ.get("CF_ZONE_IDS")
+CF_EMAIL_ADDR = os.environ.get("CF_EMAIL_ADDR") or None
+CF_API_KEY = os.environ.get("CF_API_KEY") or None
+CF_ZONE_NAME = os.environ.get("CF_ZONE_NAME") or None
+CF_ZONE_NAMES = os.environ.get("CF_ZONE_NAMES") or None
+CF_PAGE_COUNT = os.environ.get("CF_PAGE_COUNT") or None
+CF_ZONE_ID = os.environ.get("CF_ZONE_ID") or None
+CF_ZONE_IDS = os.environ.get("CF_ZONE_IDS") or None
 
 
 def check_cf_response(response: dict, context: str = "") -> None:
