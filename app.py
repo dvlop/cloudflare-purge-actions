@@ -8,6 +8,7 @@ import os
 import sys
 
 CF_API_URL = "https://api.cloudflare.com/client/v4"
+DEFAULT_PER_PAGE = "20"
 
 
 def _get_env_or_none(key: str) -> str | None:
@@ -51,7 +52,7 @@ def check_cf_response(response: dict, context: str = "") -> None:
 def get_zone_id_by_name(zone_name: str, headers: dict, per_page: str = None) -> str:
     """Fetches Zone ID from Cloudflare API by zone name."""
     page = 1
-    per_page_value = per_page if per_page is not None else "20"
+    per_page_value = per_page if per_page is not None else DEFAULT_PER_PAGE
     
     while True:
         request_url = f"{CF_API_URL}/zones?per_page={per_page_value}&page={page}"
@@ -90,9 +91,11 @@ def get_zone_id_by_name(zone_name: str, headers: dict, per_page: str = None) -> 
 def get_zone_ids_by_names(zone_names: str, headers: dict, per_page: str = None) -> list:
     """Fetches Zone IDs from Cloudflare API by comma-separated zone names."""
     zone_names_list = [name.strip() for name in zone_names.split(",")]
+    zone_names_set = set(zone_names_list)  # Track unique zone names we're looking for
     zone_ids_list = []
+    found_zone_names = set()  # Track which zone names we've found
     page = 1
-    per_page_value = per_page if per_page is not None else "20"
+    per_page_value = per_page if per_page is not None else DEFAULT_PER_PAGE
     
     # Continue fetching pages until we find all zones or run out of pages
     while True:
@@ -113,11 +116,12 @@ def get_zone_ids_by_names(zone_names: str, headers: dict, per_page: str = None) 
 
         # Search for zones in current page
         for zone in result:
-            if zone["name"] in zone_names_list:
+            if zone["name"] in zone_names_set and zone["name"] not in found_zone_names:
                 zone_ids_list.append(zone["id"])
+                found_zone_names.add(zone["name"])
         
         # If we found all requested zones, we can stop early
-        if len(zone_ids_list) == len(zone_names_list):
+        if len(found_zone_names) == len(zone_names_set):
             break
         
         # Check if there are more pages
