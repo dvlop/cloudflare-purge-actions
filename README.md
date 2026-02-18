@@ -26,7 +26,7 @@ You'll need the following from your Cloudflare account:
 
 ```yaml
 - name: Purge Cloudflare Cache
-  uses: dvlop/cloudflare-purge-actions@v3
+  uses: dvlop/cloudflare-purge-actions@v4
   with:
     cf_email: ${{ secrets.CF_EMAIL }}
     cf_api_key: ${{ secrets.CF_API_KEY }}
@@ -37,7 +37,7 @@ You'll need the following from your Cloudflare account:
 
 ```yaml
 - name: Purge Cloudflare Cache
-  uses: dvlop/cloudflare-purge-actions@v3
+  uses: dvlop/cloudflare-purge-actions@v4
   with:
     cf_email: ${{ secrets.CF_EMAIL }}
     cf_api_key: ${{ secrets.CF_API_KEY }}
@@ -48,7 +48,7 @@ You'll need the following from your Cloudflare account:
 
 ```yaml
 - name: Purge Cloudflare Cache
-  uses: dvlop/cloudflare-purge-actions@v3
+  uses: dvlop/cloudflare-purge-actions@v4
   with:
     cf_email: ${{ secrets.CF_EMAIL }}
     cf_api_key: ${{ secrets.CF_API_KEY }}
@@ -59,7 +59,7 @@ You'll need the following from your Cloudflare account:
 
 ```yaml
 - name: Purge Cloudflare Cache
-  uses: dvlop/cloudflare-purge-actions@v3
+  uses: dvlop/cloudflare-purge-actions@v4
   with:
     cf_email: ${{ secrets.CF_EMAIL }}
     cf_api_key: ${{ secrets.CF_API_KEY }}
@@ -72,7 +72,7 @@ If you have more than 20 zones in your Cloudflare account, increase the page cou
 
 ```yaml
 - name: Purge Cloudflare Cache
-  uses: dvlop/cloudflare-purge-actions@v3
+  uses: dvlop/cloudflare-purge-actions@v4
   with:
     cf_email: ${{ secrets.CF_EMAIL }}
     cf_api_key: ${{ secrets.CF_API_KEY }}
@@ -100,7 +100,7 @@ For backward compatibility, you can also use environment variables directly:
 
 ```yaml
 - name: Purge Cloudflare Cache
-  uses: dvlop/cloudflare-purge-actions@v3
+  uses: dvlop/cloudflare-purge-actions@v4
   env:
     CF_EMAIL_ADDR: ${{ secrets.CF_EMAIL }}
     CF_API_KEY: ${{ secrets.CF_API_KEY }}
@@ -139,7 +139,7 @@ jobs:
           echo "Deploying..."
 
       - name: Purge Cloudflare Cache
-        uses: dvlop/cloudflare-purge-actions@v3
+        uses: dvlop/cloudflare-purge-actions@v4
         with:
           cf_email: ${{ secrets.CF_EMAIL }}
           cf_api_key: ${{ secrets.CF_API_KEY }}
