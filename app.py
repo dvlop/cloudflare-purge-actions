@@ -8,6 +8,7 @@ import os
 import sys
 
 CF_API_URL = "https://api.cloudflare.com/client/v4"
+DEFAULT_PER_PAGE = "20"
 
 
 def _get_env_or_none(key: str) -> str | None:
@@ -50,57 +51,88 @@ def check_cf_response(response: dict, context: str = "") -> None:
 
 def get_zone_id_by_name(zone_name: str, headers: dict, per_page: str = None) -> str:
     """Fetches Zone ID from Cloudflare API by zone name."""
-    if per_page is not None:
-        request_url = f"{CF_API_URL}/zones?per_page={per_page}"
-    else:
-        request_url = f"{CF_API_URL}/zones"
-
-    try:
-        response = requests.get(request_url, headers=headers).json()
-    except requests.exceptions.HTTPError as err:
-        raise SystemExit(err)
-    except requests.exceptions.RequestException as e:
-        raise SystemExit(e)
+    page = 1
+    per_page_value = per_page if per_page is not None else DEFAULT_PER_PAGE
     
-    check_cf_response(response, "fetching zones")
-    
-    result = response.get("result")
-    if result is None:
-        raise SystemExit("Cloudflare API returned empty result when fetching zones")
+    while True:
+        request_url = f"{CF_API_URL}/zones?per_page={per_page_value}&page={page}"
 
-    for zone in result:
-        if zone["name"] == zone_name:
-            return zone["id"]
+        try:
+            response = requests.get(request_url, headers=headers).json()
+        except requests.exceptions.HTTPError as err:
+            raise SystemExit(err)
+        except requests.exceptions.RequestException as e:
+            raise SystemExit(e)
+        
+        check_cf_response(response, "fetching zones")
+        
+        result = response.get("result")
+        if result is None:
+            raise SystemExit("Cloudflare API returned empty result when fetching zones")
+
+        # Search for zone in current page
+        for zone in result:
+            if zone["name"] == zone_name:
+                return zone["id"]
+        
+        # Check if there are more pages
+        result_info = response.get("result_info", {})
+        total_pages = result_info.get("total_pages", 1)
+        
+        if page >= total_pages:
+            # No more pages, zone not found
+            break
+        
+        page += 1
     
     raise SystemExit(f"Zone '{zone_name}' not found in Cloudflare account")
 
 
 def get_zone_ids_by_names(zone_names: str, headers: dict, per_page: str = None) -> list:
     """Fetches Zone IDs from Cloudflare API by comma-separated zone names."""
-    if per_page is not None:
-        request_url = f"{CF_API_URL}/zones?per_page={per_page}"
-    else:
-        request_url = f"{CF_API_URL}/zones"
-
-    try:
-        response = requests.get(request_url, headers=headers).json()
-    except requests.exceptions.HTTPError as err:
-        raise SystemExit(err)
-    except requests.exceptions.RequestException as e:
-        raise SystemExit(e)
-
-    check_cf_response(response, "fetching zones")
-    
-    result = response.get("result")
-    if result is None:
-        raise SystemExit("Cloudflare API returned empty result when fetching zones")
-
     zone_names_list = [name.strip() for name in zone_names.split(",")]
+    zone_names_set = set(zone_names_list)  # Track unique zone names we're looking for
     zone_ids_list = []
+    found_zone_names = set()  # Track which zone names we've found
+    page = 1
+    per_page_value = per_page if per_page is not None else DEFAULT_PER_PAGE
+    
+    # Continue fetching pages until we find all zones or run out of pages
+    while True:
+        request_url = f"{CF_API_URL}/zones?per_page={per_page_value}&page={page}"
 
-    for zone in result:
-        if zone["name"] in zone_names_list:
-            zone_ids_list.append(zone["id"])
+        try:
+            response = requests.get(request_url, headers=headers).json()
+        except requests.exceptions.HTTPError as err:
+            raise SystemExit(err)
+        except requests.exceptions.RequestException as e:
+            raise SystemExit(e)
+
+        check_cf_response(response, "fetching zones")
+        
+        result = response.get("result")
+        if result is None:
+            raise SystemExit("Cloudflare API returned empty result when fetching zones")
+
+        # Search for zones in current page
+        for zone in result:
+            if zone["name"] in zone_names_set and zone["name"] not in found_zone_names:
+                zone_ids_list.append(zone["id"])
+                found_zone_names.add(zone["name"])
+        
+        # If we found all requested zones, we can stop early
+        if len(found_zone_names) == len(zone_names_set):
+            break
+        
+        # Check if there are more pages
+        result_info = response.get("result_info", {})
+        total_pages = result_info.get("total_pages", 1)
+        
+        if page >= total_pages:
+            # No more pages
+            break
+        
+        page += 1
     
     if not zone_ids_list:
         raise SystemExit(f"None of the zones '{zone_names}' found in Cloudflare account")
