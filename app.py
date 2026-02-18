@@ -8,13 +8,21 @@ import os
 import sys
 
 CF_API_URL = "https://api.cloudflare.com/client/v4"
-CF_EMAIL_ADDR = os.environ.get("CF_EMAIL_ADDR")
-CF_API_KEY = os.environ.get("CF_API_KEY")
-CF_ZONE_NAME = os.environ.get("CF_ZONE_NAME")
-CF_ZONE_NAMES = os.environ.get("CF_ZONE_NAMES")
-CF_PAGE_COUNT = os.environ.get("CF_PAGE_COUNT")
-CF_ZONE_ID = os.environ.get("CF_ZONE_ID")
-CF_ZONE_IDS = os.environ.get("CF_ZONE_IDS")
+
+
+def _get_env_or_none(key: str) -> str | None:
+    """Get environment variable, converting empty strings to None."""
+    value = os.environ.get(key)
+    return None if value == "" else value
+
+
+CF_EMAIL_ADDR = _get_env_or_none("CF_EMAIL_ADDR")
+CF_API_KEY = _get_env_or_none("CF_API_KEY")
+CF_ZONE_NAME = _get_env_or_none("CF_ZONE_NAME")
+CF_ZONE_NAMES = _get_env_or_none("CF_ZONE_NAMES")
+CF_PAGE_COUNT = _get_env_or_none("CF_PAGE_COUNT")
+CF_ZONE_ID = _get_env_or_none("CF_ZONE_ID")
+CF_ZONE_IDS = _get_env_or_none("CF_ZONE_IDS")
 
 
 def check_cf_response(response: dict, context: str = "") -> None:
